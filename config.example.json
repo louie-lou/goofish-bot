@@ -1,0 +1,131 @@
+{
+  "user_id": "YOUR_USER_ID",
+  "products": {
+    "默认": {
+      "name": "默认商品",
+      "strategy": "default",
+      "condition_note": "9成新，正常使用痕迹，功能完好",
+      "shipping_note": "全国包邮，偏远地区到付",
+      "min_price_ratio": 0.8
+    },
+    "ITEM_ID_HERE": {
+      "name": "iPhone 15 Pro 256G",
+      "strategy": "phone",
+      "condition_note": "95新，无划痕，电池健康92%",
+      "shipping_note": "顺丰包邮",
+      "listed_price": 5800,
+      "floor_price": 5000,
+      "extra_info": "原装充电器+数据线，有购买发票"
+    },
+    "AIRPODS_ITEM_ID": {
+      "name": "AirPods Pro 2",
+      "strategy": "flexible",
+      "condition_note": "99新，配件齐全",
+      "shipping_note": "包邮",
+      "listed_price": 800,
+      "floor_price": 680
+    },
+    "SERVICE_ITEM_ID": {
+      "name": "小红书数据爬取服务",
+      "strategy": "service",
+      "condition_note": "定制数据采集服务",
+      "shipping_note": "线上交付，24小时内完成",
+      "min_price_ratio": 0.9,
+      "automation": {
+        "on_placed_order": {
+          "action": "send_message",
+          "message": "感谢下单！请告诉我你需要爬取的具体内容（关键词、账号、时间范围等），确认需求后付款即可开始处理。"
+        },
+        "on_paid": {
+          "action": "openclaw_agent",
+          "agent": "goofish-crawler-service",
+          "message": "买家已付款，开始执行爬虫任务。会话: {cid}, 商品: {item_id}",
+          "notify": true
+        }
+      }
+    },
+    "EBOOK_ITEM_ID": {
+      "name": "代找电子书",
+      "strategy": "ebook",
+      "condition_note": "代找各类电子书，PDF/EPUB/MOBI 格式，找不到全额退款",
+      "shipping_note": "邮箱发送，大部分1-2小时交付",
+      "listed_price": 3,
+      "floor_price": 1.5,
+      "extra_info": "支持中英文书籍，教材、技术书、小说等均可。一次多本有优惠。",
+      "automation": {
+        "on_placed_order": {
+          "action": "send_message",
+          "message": "好的收到，稍等我确认一下"
+        },
+        "on_paid": {
+          "action": "zlib_deliver",
+          "message": "📚 买家已付款，正在下载并发送电子书...",
+          "notify": true
+        }
+      }
+    }
+  },
+  "strategies": {
+    "default": {
+      "auto_reply": true,
+      "reply_delay_seconds": 3,
+      "prompt_template": "default.md"
+    },
+    "phone": {
+      "auto_reply": true,
+      "reply_delay_seconds": 2,
+      "prompt_template": "firm.md"
+    },
+    "firm": {
+      "auto_reply": true,
+      "reply_delay_seconds": 2,
+      "prompt_template": "firm.md"
+    },
+    "flexible": {
+      "auto_reply": true,
+      "reply_delay_seconds": 3,
+      "prompt_template": "flexible.md"
+    },
+    "service": {
+      "auto_reply": true,
+      "reply_delay_seconds": 1,
+      "prompt_template": "service.md"
+    },
+    "ebook": {
+      "auto_reply": true,
+      "reply_delay_seconds": 1,
+      "prompt_template": "ebook.md"
+    }
+  },
+  "quick_replies": {
+    "包邮吗": "包邮的",
+    "在吗": "在的",
+    "还在吗": "在的",
+    "什么格式": "主要是 PDF 格式，部分书有 EPUB 或 MOBI 格式",
+    "怎么发": "付款后通过邮箱发送，请留一下你的邮箱地址",
+    "多久能拿到": "大部分书 1-2 小时内，冷门书最迟 24 小时",
+    "找不到怎么办": "找不到全额退款，放心"
+  },
+  "notification": {
+    "discord_channel": "channel:YOUR_CHANNEL_ID",
+    "notify_on_new_chat": true,
+    "notify_on_escalation": true,
+    "status_report_interval_hours": 6
+  },
+  "ai": {
+    "tone": "友好随和的二手卖家，不卑不亢，实话实说",
+    "max_history_messages": 10,
+    "escalation_keywords": [
+      "退货", "退款", "售后", "投诉", "质量问题", "坏了", "不能用"
+    ],
+    "manual_takeover_minutes": 30
+  },
+  "email": {
+    "smtp_host": "smtp.qq.com",
+    "smtp_port": 465,
+    "username": "YOUR_EMAIL@qq.com",
+    "password": "YOUR_SMTP_AUTH_CODE",
+    "sender": "YOUR_EMAIL@qq.com"
+  },
+  "cookies_path": "~/.openclaw/goofish/cookies.json"
+}

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>闲鱼 Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">鱼</div>
+      <div class="brand-text">
+        <span class="brand-name">闲鱼 Bot</span>
+        <div id="status-pill" class="status-pill offline">
+          <span class="status-dot"></span>
+          <span id="status-label">离线</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        概览
+      </button>
+      <button class="nav-item" data-page="products">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        商品
+      </button>
+      <button class="nav-item" data-page="strategies">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        策略
+      </button>
+      <button class="nav-item" data-page="quick-replies">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        快速回复
+      </button>
+      <button class="nav-item" data-page="conversations">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        对话
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span id="uptime" class="uptime-text"></span>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ========== Dashboard ========== -->
+    <main id="page-dashboard" class="page active">
+      <div class="page-title">
+        <div>
+          <h1>概览</h1>
+          <p class="subtitle">实时运行状态</p>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card" style="--delay:.03s">
+          <div class="stat-value" id="stat-received">—</div>
+          <div class="stat-label">收到消息</div>
+        </div>
+        <div class="stat-card" style="--delay:.06s">
+          <div class="stat-value" id="stat-replies">—</div>
+          <div class="stat-label">AI 回复</div>
+        </div>
+        <div class="stat-card" style="--delay:.09s">
+          <div class="stat-value" id="stat-quick">—</div>
+          <div class="stat-label">快速回复</div>
+        </div>
+      </div>
+      <div class="stats-secondary">
+        <div class="stat-inline">
+          <div class="stat-value" id="stat-escalated">—</div>
+          <div class="stat-label">升级人工</div>
+        </div>
+        <div class="stat-inline">
+          <div class="stat-value" id="stat-sessions">—</div>
+          <div class="stat-label">活跃会话</div>
+        </div>
+        <div class="stat-inline">
+          <div class="stat-value" id="stat-reconnects">—</div>
+          <div class="stat-label">重连次数</div>
+        </div>
+      </div>
+      <section class="ios-card" id="errors-panel" style="display:none">
+        <div class="ios-card-header"><h3>最近错误</h3></div>
+        <div id="errors-list" class="errors-list"></div>
+      </section>
+    </main>
+
+    <!-- ========== Products ========== -->
+    <main id="page-products" class="page">
+      <div class="page-title"><div><h1>商品</h1><p class="subtitle">管理商品与策略绑定</p></div></div>
+      <div id="products-list"></div>
+    </main>
+
+    <!-- ========== Strategies ========== -->
+    <main id="page-strategies" class="page">
+      <div class="page-title"><div><h1>策略</h1><p class="subtitle">回复策略与 Prompt 模板</p></div></div>
+      <div id="strategies-list"></div>
+    </main>
+
+    <!-- ========== Quick Replies ========== -->
+    <main id="page-quick-replies" class="page">
+      <div class="page-title">
+        <div><h1>快速回复</h1><p class="subtitle">关键词精确匹配，跳过 AI</p></div>
+        <button class="btn-primary" onclick="addQuickReply()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          添加规则
+        </button>
+      </div>
+      <div class="ios-card">
+        <div id="qr-list"></div>
+      </div>
+    </main>
+
+    <!-- ========== Conversations ========== -->
+    <main id="page-conversations" class="page">
+      <div class="page-title"><div><h1>对话</h1><p class="subtitle">买家对话记录</p></div></div>
+      <div class="convo-layout">
+        <div class="convo-sidebar" id="convo-list">
+          <div class="empty-state">加载中…</div>
+        </div>
+        <div class="convo-main" id="convo-detail">
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-quaternary)" stroke-width="1.2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <p>选择一个对话</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- ========== Modal ========== -->
+<div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title" onclick="closeModal()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3 id="modal-title">编辑</h3>
+      <button class="modal-close" onclick="closeModal()">完成</button>
+    </div>
+    <div class="modal-content" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+/* === State === */
+let currentQuickReplies = {};
+let _productsCache = [];
+
+/* === Navigation === */
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-' + btn.dataset.page).classList.add('active');
+    const loaders = { dashboard: loadStatus, products: loadProducts, strategies: loadStrategies, 'quick-replies': loadQuickReplies, conversations: loadConversations };
+    (loaders[btn.dataset.page] || (() => {}))();
+  });
+});
+
+/* === API === */
+async function api(path, opts) {
+  const res = await fetch('/api/' + path, opts);
+  if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
+  return res.json();
+}
+
+/* === Dashboard === */
+async function loadStatus() {
+  const s = await api('status');
+  const pill = document.getElementById('status-pill');
+  const label = document.getElementById('status-label');
+  if (s.alive) { pill.className = 'status-pill online'; label.textContent = '运行中'; }
+  else { pill.className = 'status-pill offline'; label.textContent = '离线'; }
+
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—'; };
+  set('stat-received', s.messages_received);
+  set('stat-replies', s.replies_sent);
+  set('stat-quick', s.quick_replies);
+  set('stat-escalated', s.escalated);
+  set('stat-sessions', s.active_sessions);
+  set('stat-reconnects', s.ws_reconnects);
+
+  if (s.started_at) {
+    const diff = Math.floor((Date.now() - new Date(s.started_at.replace(' ','T')).getTime()) / 1000);
+    const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60);
+    document.getElementById('uptime').textContent = `已运行 ${h} 小时 ${m} 分钟`;
+  }
+
+  const ep = document.getElementById('errors-panel'), el = document.getElementById('errors-list');
+  if (s.errors?.length) {
+    ep.style.display = '';
+    el.innerHTML = s.errors.map(e => `<div class="error-row">${esc(e)}</div>`).join('');
+  } else { ep.style.display = 'none'; }
+}
+
+/* === Products === */
+async function loadProducts() {
+  const products = await api('products');
+  _productsCache = products;
+  const el = document.getElementById('products-list');
+  if (!products.length) { el.innerHTML = '<div class="empty-state">暂无商品</div>'; return; }
+  el.innerHTML = products.map((p, i) => `
+    <div class="ios-card product-card" style="animation-delay:${i * .06}s">
+      <div class="product-top">
+        <div class="product-info">
+          <h3 class="product-name">${esc(p.name || p.item_id)}</h3>
+          <span class="pill pill-${p.strategy || 'default'}">${esc(p.strategy || 'default')}</span>
+        </div>
+        <div class="product-id">${esc(p.item_id)}</div>
+      </div>
+      <div class="product-meta">
+        ${p.listed_price != null ? `<div class="meta-chip"><span class="meta-label">标价</span><span class="meta-value">¥${p.listed_price}</span></div>` : ''}
+        ${p.floor_price != null ? `<div class="meta-chip"><span class="meta-label">底价</span><span class="meta-value">¥${p.floor_price}</span></div>` : ''}
+        ${p.min_price_ratio != null ? `<div class="meta-chip"><span class="meta-label">比例</span><span class="meta-value">${(p.min_price_ratio * 100).toFixed(0)}%</span></div>` : ''}
+        ${p.strategy_detail?.reply_delay_seconds != null ? `<div class="meta-chip"><span class="meta-label">延迟</span><span class="meta-value">${p.strategy_detail.reply_delay_seconds}s</span></div>` : ''}
+      </div>
+      ${p.condition_note ? `<div class="product-note">${esc(p.condition_note)}</div>` : ''}
+      ${p.shipping_note ? `<div class="product-note light">${esc(p.shipping_note)}</div>` : ''}
+      ${p.automation ? renderAuto(p.automation) : ''}
+      <div class="product-actions">
+        <button class="btn-ghost" onclick="showPromptByIndex(${i})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          查看 Prompt
+        </button>
+        <button class="btn-ghost" onclick="editProductByIndex(${i})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          编辑
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAuto(auto) {
+  return `<div class="auto-row">${Object.entries(auto).map(([ev, cfg]) => {
+    const icon = ev === 'on_paid' ? '💰' : '🛒';
+    const name = ev === 'on_placed_order' ? '拍下' : ev === 'on_paid' ? '付款' : ev;
+    return `<span class="auto-chip">${icon} ${name} → <b>${esc(cfg.action)}</b></span>`;
+  }).join('')}</div>`;
+}
+
+function showPromptByIndex(idx) {
+  const p = _productsCache[idx];
+  if (!p) return;
+  openModal('Prompt · ' + (p.strategy || 'default'), `<pre class="prompt-view">${esc(p.prompt_template_content || '（无模板）')}</pre>`);
+}
+
+function editProductByIndex(idx) {
+  const p = _productsCache[idx];
+  if (!p) return;
+  const id = p.item_id;
+  openModal('编辑 · ' + (p.name || id), `
+    <form onsubmit="saveProduct(event,'${esc(id)}')">
+      <div class="form-group"><label>名称</label><input name="name" value="${esc(p.name||'')}" required></div>
+      <div class="form-group"><label>策略</label><select name="strategy">${['default','firm','flexible','service','ebook','phone'].map(s=>`<option ${p.strategy===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-row">
+        <div class="form-group"><label>标价</label><input name="listed_price" type="number" step="0.01" value="${p.listed_price??''}"></div>
+        <div class="form-group"><label>底价</label><input name="floor_price" type="number" step="0.01" value="${p.floor_price??''}"></div>
+      </div>
+      <div class="form-group"><label>成色</label><textarea name="condition_note" rows="2">${esc(p.condition_note||'')}</textarea></div>
+      <div class="form-group"><label>物流</label><textarea name="shipping_note" rows="2">${esc(p.shipping_note||'')}</textarea></div>
+      <div class="form-group"><label>补充</label><textarea name="extra_info" rows="2">${esc(p.extra_info||'')}</textarea></div>
+      <button type="submit" class="btn-primary full">保存修改</button>
+    </form>`);
+}
+
+async function saveProduct(e, id) {
+  e.preventDefault();
+  const data = {};
+  for (const [k,v] of new FormData(e.target).entries()) {
+    if (!v) continue;
+    data[k] = (k==='listed_price'||k==='floor_price') ? parseFloat(v) : v;
+  }
+  await api('products/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  closeModal(); loadProducts();
+}
+
+/* === Strategies === */
+async function loadStrategies() {
+  const list = await api('strategies');
+  document.getElementById('strategies-list').innerHTML = list.map((s,i) => `
+    <div class="ios-card" style="animation-delay:${i*.06}s">
+      <div class="strat-header">
+        <div>
+          <h3 class="strat-name">${esc(s.name)}</h3>
+          <div class="strat-meta">
+            <span>${esc(s.prompt_template || '—')}</span>
+            <span>延迟 ${s.reply_delay_seconds ?? '—'}s</span>
+            <span>${s.auto_reply !== false ? '自动回复' : '手动'}</span>
+          </div>
+        </div>
+        <button class="btn-ghost" onclick="this.closest('.ios-card').querySelector('.strat-prompt').classList.toggle('open')">
+          展开模板
+        </button>
+      </div>
+      <div class="strat-prompt"><pre class="prompt-view">${esc(s.prompt_content || '（无模板）')}</pre></div>
+    </div>
+  `).join('');
+}
+
+/* === Quick Replies === */
+async function loadQuickReplies() { currentQuickReplies = await api('quick-replies'); renderQR(); }
+
+function renderQR() {
+  const entries = Object.entries(currentQuickReplies);
+  const el = document.getElementById('qr-list');
+  if (!entries.length) { el.innerHTML = '<div class="empty-state">暂无规则</div>'; return; }
+  el.innerHTML = entries.map(([kw, reply]) => `
+    <div class="qr-row">
+      <div class="qr-keyword">${esc(kw)}</div>
+      <div class="qr-arrow">→</div>
+      <div class="qr-reply">${esc(reply)}</div>
+      <div class="qr-actions">
+        <button class="btn-icon" onclick="editQR('${escAttr(kw)}','${escAttr(reply)}')" title="编辑">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn-icon danger" onclick="deleteQR('${escAttr(kw)}')" title="删除">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addQuickReply() {
+  openModal('新建快速回复', `
+    <form onsubmit="saveQR(event)">
+      <div class="form-group"><label>触发关键词</label><input name="keyword" required placeholder="买家消息中包含此词即触发"></div>
+      <div class="form-group"><label>自动回复</label><input name="reply" required placeholder="Bot 回复内容"></div>
+      <button type="submit" class="btn-primary full">添加</button>
+    </form>`);
+}
+
+function editQR(kw, reply) {
+  openModal('编辑快速回复', `
+    <form onsubmit="saveQR(event,'${esc(kw)}')">
+      <div class="form-group"><label>关键词</label><input name="keyword" value="${esc(kw)}" required></div>
+      <div class="form-group"><label>回复</label><input name="reply" value="${esc(reply)}" required></div>
+      <button type="submit" class="btn-primary full">保存</button>
+    </form>`);
+}
+
+async function saveQR(e, oldKw) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  if (oldKw && oldKw !== fd.get('keyword')) delete currentQuickReplies[oldKw];
+  currentQuickReplies[fd.get('keyword')] = fd.get('reply');
+  await api('quick-replies', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(currentQuickReplies) });
+  closeModal(); renderQR();
+}
+
+async function deleteQR(kw) {
+  delete currentQuickReplies[kw];
+  await api('quick-replies', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(currentQuickReplies) });
+  renderQR();
+}
+
+/* === Conversations === */
+async function loadConversations() {
+  const convos = await api('conversations');
+  const el = document.getElementById('convo-list');
+  if (!convos.length) { el.innerHTML = '<div class="empty-state">暂无对话</div>'; return; }
+  el.innerHTML = convos.map(c => {
+    const t = c.last_ts > 1e12 ? new Date(c.last_ts) : new Date(c.last_ts * 1000);
+    const time = t.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const labels = {msg_buyer:['买家',''],msg_seller_ai:['AI','mini-pill-ai'],msg_seller_quick:['快回','mini-pill-quick'],trade_event:['交易','mini-pill-trade'],escalation:['升级','mini-pill-escalation']};
+    return `
+      <div class="convo-item" onclick="loadConvoDetail('${c.cid}',this)">
+        <div class="convo-top"><span class="convo-id">${c.cid}</span><span class="convo-time">${time}</span></div>
+        <div class="convo-preview">${labels[c.last_type] ? `<span class="mini-pill ${labels[c.last_type][1]}">${labels[c.last_type][0]}</span>` : ''}${esc(c.last_content)}</div>
+        <div class="convo-count">${c.msg_count} 条</div>
+      </div>`;
+  }).join('');
+}
+
+async function loadConvoDetail(cid, el) {
+  document.querySelectorAll('.convo-item').forEach(i => i.classList.remove('active'));
+  el?.classList.add('active');
+  const events = await api('conversations/' + cid);
+  const detail = document.getElementById('convo-detail');
+  detail.innerHTML = `<div class="chat-stream">${events.map(renderMsg).join('')}</div>`;
+  detail.scrollTop = detail.scrollHeight;
+}
+
+function renderMsg(evt) {
+  const t = evt.ts > 1e12 ? new Date(evt.ts) : new Date(evt.ts * 1000);
+  const time = t.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  if (evt.type === 'trade_event') {
+    const icons = {placed_order:'🛒 拍下',paid:'💰 付款',shipped:'📦 发货',confirmed:'✅ 确认'};
+    return `<div class="chat-event">${icons[evt.event]||evt.event}<span class="chat-time">${time}</span></div>`;
+  }
+  if (evt.type === 'escalation') return `<div class="chat-event warn">⚠️ 升级: ${esc(evt.content)}<span class="chat-time">${time}</span></div>`;
+  const buyer = evt.type === 'msg_buyer';
+  return `<div class="chat-msg ${buyer?'from-buyer':'from-seller'}">
+    <div class="chat-bubble">${esc(evt.content)}</div>
+    <div class="chat-info">${buyer?'买家':(evt.type==='msg_seller_quick'?'快回':'AI')} · ${time}</div>
+  </div>`;
+}
+
+/* === Modal === */
+function openModal(title, html) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-backdrop').classList.add('open');
+  const firstInput = document.querySelector('#modal-body input, #modal-body select, #modal-body textarea');
+  if (firstInput) setTimeout(() => firstInput.focus(), 50);
+}
+function closeModal() { document.getElementById('modal-backdrop').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* === Utils === */
+function esc(s) { return s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return esc(s).replace(/'/g,'&#39;'); }
+
+/* === Init === */
+loadStatus();
+setInterval(loadStatus, 15000);
+</script>
+</body>
+</html>

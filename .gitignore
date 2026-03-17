@@ -1,0 +1,32 @@
+# Secrets & credentials
+*.key
+*.secret
+cookies.json
+token_cache.json
+device_id.txt
+auth-profiles.json
+config.json
+.env
+
+# Runtime data
+__pycache__/
+*.pyc
+*.pyo
+chat_history.json
+status.json
+conversations/
+downloads/
+reports/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
